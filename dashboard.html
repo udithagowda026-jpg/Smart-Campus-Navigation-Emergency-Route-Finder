@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f1f4f0">
+  <title>Campus Navigation | Smart Campus</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dashboard.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="risk-model.js" defer></script>
+  <script src="dashboard.js" defer></script>
+  <script src="live-map.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#overview" aria-label="Smart Campus home">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="brand-name">fieldnotes<span> / CAMPUS</span></span>
+      </a>
+
+      <div class="sidebar-label">CAMPUS OPERATIONS</div>
+      <nav class="side-nav" aria-label="Dashboard sections">
+        <a class="nav-link is-active" href="#overview"><span class="nav-index">01</span>Overview</a>
+        <a class="nav-link" href="#network"><span class="nav-index">02</span>Network map</a>
+        <a class="nav-link" href="#roads"><span class="nav-index">03</span>Road directory</a>
+        <a class="nav-link" href="#activity"><span class="nav-index">04</span>Route activity</a>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="network-status">
+        <span class="status-pulse" aria-hidden="true"></span>
+        <div><strong>Network online</strong><span>Sample campus graph</span></div>
+      </div>
+      <div class="sidebar-foot">SMART CAMPUS NAVIGATION<br>CONSOLE COMPANION · 01</div>
+    </aside>
+
+    <main id="overview" class="main-content">
+      <header class="page-header">
+        <div>
+          <div class="eyebrow"><span>OPERATIONS</span><span class="eyebrow-slash">/</span><span>ROUTE INTELLIGENCE</span></div>
+          <h1>Campus overview</h1>
+          <p class="page-subtitle">A clear view of the paths that connect your campus.</p>
+        </div>
+        <div class="header-meta"><span class="today-mark"></span><span>LIVE NETWORK</span><span class="meta-divider"></span><span id="header-location-count">14 LOCATIONS</span></div>
+      </header>
+
+      <section class="metrics" aria-label="Campus network summary">
+        <article class="metric metric-green">
+          <div class="metric-label">Campus locations <span>01 / NODES</span></div>
+          <div class="metric-value" id="metric-locations">14</div>
+          <div class="metric-foot"><span class="metric-tick"></span>Mapped destinations</div>
+        </article>
+        <article class="metric">
+          <div class="metric-label">Connected roads <span>02 / EDGES</span></div>
+          <div class="metric-value" id="metric-roads">18</div>
+          <div class="metric-foot">Two-way campus paths</div>
+        </article>
+        <article class="metric metric-safe">
+          <div class="metric-label"><span id="metric-safe-title">Emergency available</span><span id="metric-safe-code">03 / SAFE</span></div>
+          <div class="metric-value" id="metric-safe">17</div>
+          <div class="metric-foot"><span class="safe-dot"></span>Eligible road connections</div>
+        </article>
+        <article class="metric metric-alert">
+          <div class="metric-label"><span id="metric-blocked-title">Blocked roads</span><span id="metric-blocked-code">04 / ALERT</span></div>
+          <div class="metric-value" id="metric-blocked">00</div>
+          <div class="metric-foot">Excluded from all routes</div>
+        </article>
+      </section>
+
+      <section class="workspace-grid">
+        <section class="map-panel panel" id="network" aria-labelledby="map-title">
+          <div class="panel-heading map-heading">
+            <div>
+              <div class="section-kicker">NETWORK TOPOLOGY <span>· 18 CONNECTIONS</span></div>
+              <h2 id="map-title">Campus map</h2>
+            </div>
+            <label class="search-box">
+              <span class="search-mark" aria-hidden="true"></span>
+              <input id="location-search" type="search" placeholder="Find a location" autocomplete="off" aria-label="Find a location">
+              <kbd>/</kbd>
+            </label>
+          </div>
+          <div class="map-modebar">
+            <div class="map-mode-tabs" role="group" aria-label="Map data source">
+              <button id="sample-map-tab" class="map-tab is-selected" type="button" aria-pressed="true">Sample graph</button>
+              <button id="live-map-tab" class="map-tab" type="button" aria-pressed="false">Real-world map</button>
+            </div>
+            <div id="live-location-tools" class="live-location-tools" hidden>
+              <form id="place-search-form" class="place-search-form">
+                <input id="campus-search" type="search" placeholder="Campus, address, or place" aria-label="Search campus or address">
+                <button type="submit">Find place</button>
+              </form>
+              <button id="use-my-location" class="location-button" type="button">Use my location</button>
+              <label class="radius-select"><span>AREA</span><select id="map-radius" aria-label="Map search radius"><option value="700">700 m</option><option value="1200" selected>1.2 km</option><option value="2000">2 km</option></select></label>
+            </div>
+          </div>
+          <div class="map-viewport">
+            <div id="sample-map">
+              <svg id="campus-map" class="campus-map" viewBox="0 0 920 640" role="group" aria-label="Interactive campus road graph">
+                <defs>
+                  <pattern id="map-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+                    <circle cx="1" cy="1" r="1" fill="#cbd5cc" opacity=".55"></circle>
+                  </pattern>
+                </defs>
+                <rect width="920" height="640" fill="url(#map-grid)"></rect>
+                <g id="roads-layer"></g>
+                <g id="nodes-layer"></g>
+              </svg>
+              <div class="map-scale"><span class="scale-line"></span>SCHEMATIC · NOT TO SCALE</div>
+            </div>
+            <div id="live-map" class="live-map" hidden></div>
+            <div id="real-map-state" class="real-map-state" aria-live="polite" hidden></div>
+          </div>
+          <div class="map-footer">
+            <div class="legend" aria-label="Road status legend">
+              <span><i class="legend-line normal"></i>Normal</span>
+              <span><i class="legend-line crowded"></i>Crowded</span>
+              <span><i class="legend-line emergency-only"></i>Emergency only</span>
+              <span><i class="legend-line route-line"></i>Selected route</span>
+            </div>
+            <button class="text-button" id="nearby-button" type="button">Reachable from start <span aria-hidden="true">→</span></button>
+          </div>
+          <div class="nearby-output" id="nearby-output" aria-live="polite" hidden></div>
+        </section>
+
+        <aside class="planner-panel panel" aria-labelledby="planner-title">
+          <div class="panel-heading planner-heading">
+            <div>
+              <div class="section-kicker">PATHFINDING <span>· DIJKSTRA</span></div>
+              <h2 id="planner-title">Route planner</h2>
+            </div>
+            <span class="planner-number">01</span>
+          </div>
+
+          <div class="mode-switch" role="group" aria-label="Route mode">
+            <button class="mode-button is-selected" type="button" data-mode="normal" aria-pressed="true">Standard</button>
+            <button class="mode-button" type="button" data-mode="accessible" aria-pressed="false">Step-free</button>
+            <button class="mode-button" type="button" data-mode="evacuation" aria-pressed="false">Evacuate</button>
+            <button class="mode-button" type="button" data-mode="emergency" aria-pressed="false"><span class="mode-alert-dot"></span>Emergency</button>
+          </div>
+          <p class="mode-description" id="mode-description">Shortest travel time on ordinary open roads.</p>
+
+          <section id="evacuation-settings" class="evacuation-settings" hidden aria-label="Evacuation scenario settings">
+            <div class="scenario-heading"><span>RISK FORECAST / PROTOTYPE</span><span>HEURISTIC</span></div>
+            <label class="scenario-slider" for="crowd-pressure">
+              <span>Crowd pressure <output id="crowd-pressure-value">35%</output></span>
+              <input id="crowd-pressure" type="range" min="0" max="100" value="35">
+            </label>
+            <label class="scenario-slider" for="incident-severity">
+              <span>Incident severity <output id="incident-severity-value">25%</output></span>
+              <input id="incident-severity" type="range" min="0" max="100" value="25">
+            </label>
+            <label class="scenario-people" for="evacuee-count">People to evacuate
+              <input id="evacuee-count" type="number" min="1" max="5000" step="50" value="300">
+            </label>
+            <p>Scenario estimate only. No sensor feed or trained incident model is connected.</p>
+          </section>
+
+          <form id="route-form" class="route-form">
+            <div id="sample-route-controls">
+              <label class="field-label" for="route-start">FROM</label>
+              <div class="select-wrap"><span class="field-marker start-marker"></span><select id="route-start" required></select></div>
+              <div class="route-connector"><span></span></div>
+              <label class="field-label" for="route-destination">TO</label>
+              <div class="select-wrap"><span class="field-marker end-marker"></span><select id="route-destination" required></select></div>
+            </div>
+            <div id="live-route-controls" class="live-route-controls" hidden>
+              <button id="pick-start" class="pick-point" type="button"><span class="field-marker start-marker"></span><span><small>FROM</small><strong id="live-start-label">Choose a point on the map</strong></span></button>
+              <div class="route-connector"><span></span></div>
+              <button id="pick-destination" class="pick-point" type="button"><span class="field-marker end-marker"></span><span><small>TO</small><strong id="live-destination-label">Choose a point on the map</strong></span></button>
+              <p id="pick-instruction" class="pick-instruction">Search for a place, load its paths, then choose start and destination points.</p>
+            </div>
+            <button class="calculate-button" type="submit">Calculate route <span aria-hidden="true">↗</span></button>
+          </form>
+
+          <section class="route-result" id="route-output" aria-live="polite" aria-atomic="true">
+            <div class="result-empty">
+              <span class="result-index">ROUTE OUTPUT / 00</span>
+              <p>Choose two locations to see the route and travel time.</p>
+            </div>
+          </section>
+          <div class="planner-note"><span class="note-symbol">i</span><span id="planner-note-text">Crowded roads remain available for standard routing.</span></div>
+        </aside>
+      </section>
+
+      <section class="lower-grid">
+        <section class="directory-panel panel" id="roads" aria-labelledby="roads-title">
+          <div class="panel-heading directory-heading">
+            <div>
+              <div class="section-kicker">CONNECTION REGISTER <span>· DISTANCE ASCENDING</span></div>
+              <h2 id="roads-title">Road directory</h2>
+            </div>
+            <span class="table-count" id="road-count-label">18 ROADS</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ROAD</th><th>TIME</th><th>STATUS</th><th>EMERGENCY</th></tr></thead>
+              <tbody id="road-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="activity-panel panel" id="activity" aria-labelledby="activity-title">
+          <div class="panel-heading activity-heading">
+            <div>
+              <div class="section-kicker">THIS SESSION <span>· ROUTE LOG</span></div>
+              <h2 id="activity-title">Recent routes</h2>
+            </div>
+            <span class="activity-count" id="activity-count">00</span>
+          </div>
+          <div id="history-list" class="history-list">
+            <div class="history-empty"><span class="empty-dash">—</span><span>Calculated routes will appear here.</span></div>
+          </div>
+          <div class="activity-foot">History clears when this page is refreshed.</div>
+        </section>
+      </section>
+
+      <footer class="page-footer"><span>SMART CAMPUS NAVIGATION</span><span>ROUTES ARE ESTIMATES · ALWAYS FOLLOW CAMPUS SAFETY GUIDANCE</span></footer>
+    </main>
+  </div>
+</body>
+</html>
